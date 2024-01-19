@@ -6,9 +6,7 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "mitch-gitlab-cicd"
-    key = "githubActions/terraform.tfstate"
-    region = "eu-west-1"
+    
   }
 }
 
