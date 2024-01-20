@@ -1,18 +1,19 @@
 name: Automate Provisioning
 
 on:
-    push:
-        paths:
-          - 's3_files/src/**'
-        branches:
-          - main
-    pull_request:
-      paths:
-        - 's3_files/src/**'
+  push:
+    paths:
+      - 's3_files/src/**'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 's3_files/src/**'
+
 permissions:
-    id-token: write
-    contents: read
-    pull-requests: write
+  id-token: write
+  contents: read
+  pull-requests: write
 
 env:
   TF_LOG: INFO
@@ -23,54 +24,49 @@ jobs:
     name: Host portfolio
     runs-on: ubuntu-latest
     defaults:
-        run:
-            shell: bash
-            working-directory: mitch-gitlab-cicd/githubActions
+      run:
+        shell: bash
+        working-directory: mitch-gitlab-cicd/githubActions
     steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v2
 
-    -  name: Checkout Repo
-       uses: actions/checkout@v1
-
-    -  name: Configure AWS credentials from AWS Account
-       uses: aws-actions/configure-aws-credentials@v1
-       with:
+      - name: Configure AWS credentials from AWS Account
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
           role-to-assume: ${{ secrets.AWS_ROLE }}
           aws-region: ${{ secrets.AWS_REGION }}
           role-session-name: GitHub-OIDC-TERRAFORM
 
-    -  name: Setup Terraform
-       uses: hashicorp/setup-terrafom@v2
-       with:
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
           terraform_version: 1.5.5
 
-    -  name: Terraform fmt
-       id: fmt
-       run: terraform fmt
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt
 
-    -  name: Terraform Init
-       id: init
-       env:
+      - name: Terraform Init
+        id: init
+        env:
           AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
-          AWS_BUCKET_KEY_NAme: ${{ secrets.AWS_BUCKET_KEY_NAME }}
-       run: |
-         rm -rf .terraform
-         terraform init -backend-config="bucket=${AWS_BUCKET_NAME}"
-                        -backend-config="key=${AWS_BUCKET_KEY_NAME}"
-                        - backend-config="region=${AWS_REGION}"
+          AWS_BUCKET_KEY_NAME: ${{ secrets.AWS_BUCKET_KEY_NAME }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+        run: |
+          rm -rf .terraform
+          terraform init -backend-config="bucket=${AWS_BUCKET_NAME}" \
+                         -backend-config="key=${AWS_BUCKET_KEY_NAME}" \
+                         -backend-config="region=${AWS_REGION}"
 
-    - name: Terraform Validate
-      id: validate
-      run: terraform validate --no-color
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate --no-color
 
-    - name: Terraform Plan and Apply
-      id: plan_apply
-      run: |
-        terraform plan --no-color
-        if [ "${{ github.ref }}" == "refs/head/main" ] &&
-           ["${{ github.event_name }}" == "push" ];
-        then
-           terraform apply --auto-approve --input=false
-        fi
-
-
-
+      - name: Terraform Plan and Apply
+        id: plan_apply
+        run: |
+          terraform plan --no-color
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ github.event_name }}" = "push" ]; then
+            terraform apply --auto-approve --input=false
+          fi
