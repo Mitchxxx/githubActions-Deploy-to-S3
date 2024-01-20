@@ -1,5 +1,5 @@
 name: Automate Provisioning
-'on':
+on:
   push:
     paths:
       - s3_files/src/**
