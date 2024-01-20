@@ -3,7 +3,7 @@ name: Automate Provisioning
 on:
     push:
         paths:
-          - 'se_files/src/**'
+          - 's3_files/src/**'
         branches:
           - main
     pull_request:
